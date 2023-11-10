@@ -25,7 +25,7 @@ def V1(beta_coefficients, data):
     sero = np.array(data["Sero"])
     return beta_coefficients["β01"] + beta_coefficients["β1"] * x1 + beta_coefficients["β2"] * x2
 
-def V2(beta_coeffieicnts, data):
+def V2(beta_coefficients, data):
     x1 = np.array(data["X1"])
     x2 = np.array(data["X2"])
     sero = np.array(data["Sero"])
@@ -39,15 +39,18 @@ def V3(beta_coefficients, data):
 
 #Creating utilities function list.
 
-utilities = [V1(beta_coefficients, data), V2(beta_coefficients, data), V3(beta_coefficients, data)]
+functions = [V1(beta_coefficients, data),V2(beta_coefficients, data),V3(beta_coefficients, data)]
+
+utilities = [functions[i] for i in range(len(data.keys()))]
 
 def calculate_probabilities(parameters, data, utilities):
-    parameters = beta_coefficients
+    denominator = np.exp(utilities[0])
+    for i in range(1,len(utilities)):
+        denominator += np.exp(utilities[i])
     P_dict = {}
     for i in range(len(utilities)):
-        P_dict['P{}'.format(i+1)] = np.exp(utilities[i]) / (np.exp(utilities[0]) + np.exp(utilities[1]) + np.exp(utilities[2]))
+        P_dict['P{}'.format(i+1)] = (np.exp(utilities[i]) / denominator)
     return P_dict
-
 P_dict = calculate_probabilities(beta_coefficients, data, utilities)
 
 with open('P_dict.txt', 'w') as file:
