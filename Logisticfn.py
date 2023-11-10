@@ -14,50 +14,62 @@ data = {
 'Sero': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
 
-x1 = np.array(data["X1"])
-x2 = np.array(data["X2"])
-sero = np.array(data["Sero"])
 
+#function defining utilities
 
-def V1(beta_coefficients, data):
-    x1 = np.array(data["X1"])
-    x2 = np.array(data["X2"])
-    sero = np.array(data["Sero"])
-    return beta_coefficients["β01"] + beta_coefficients["β1"] * x1 + beta_coefficients["β2"] * x2
+def V1(beta_coefficients, data_array):
+    return beta_coefficients["β01"] + beta_coefficients["β1"] * data_array[0,:] + beta_coefficients["β2"] * data_array[1,:]
 
-def V2(beta_coefficients, data):
-    x1 = np.array(data["X1"])
-    x2 = np.array(data["X2"])
-    sero = np.array(data["Sero"])
-    return beta_coefficients["β02"] + beta_coefficients["β1"] * x1 + beta_coefficients["β2"] * x2
+def V2(beta_coefficients, data_array):
+    return beta_coefficients["β02"] + beta_coefficients["β1"] * data_array[0,:] + beta_coefficients["β2"] * data_array[1,:]
 
-def V3(beta_coefficients, data):
-    x1 = np.array(data["X1"])
-    x2 = np.array(data["X2"])
-    sero = np.array(data["Sero"])
-    return beta_coefficients["β03"] + beta_coefficients["β1"] * sero + beta_coefficients["β2"] * sero
+def V3(beta_coefficients, data_array):
+    return beta_coefficients["β03"] + beta_coefficients["β1"] * data_array[2,:] + beta_coefficients["β2"] * data_array[2,:]
 
-#Creating utilities function list.
+#Creating utilities function list to add new functions here, for expansion.
+functions = [V1,V2,V3]   
 
-functions = [V1(beta_coefficients, data),V2(beta_coefficients, data),V3(beta_coefficients, data)]
-
+#Utilities can accomidate more functions and data when added
 utilities = [functions[i] for i in range(len(data.keys()))]
 
+
+#function definition
+
 def calculate_probabilities(parameters, data, utilities):
-    denominator = np.exp(utilities[0])
+    #Error handling 1: To catch mismatched dimensions b/w parameters and data
+    if len(parameters) != len(data) + 2:
+        raise ValueError("Error: The number of beta coefficients must be one more than the number of lists in data.")
+    
+    # Get the lists from the dictionary and convert them to numpy arrays
+    arrays = [np.array(v) for v in data.values()]
+
+    # Error handling 2: Check if all arrays have the same length
+    if all(len(arr) == len(arrays[0]) for arr in arrays):
+        # Stack the arrays vertically to create a 2D array
+        data_array = np.vstack(arrays)
+    else:
+        print("Error: All lists in the data dictionary must have the same length.")
+
+
+    # same denominator for all, so define it
+    denominator = np.exp(utilities[0](parameters, data_array))
+    #loop to accomidate expansion in utility function
     for i in range(1,len(utilities)):
-        denominator += np.exp(utilities[i])
+        denominator += np.exp(utilities[i](parameters, data_array))
+    
+    #Probality calculation and dictionary to add values
     P_dict = {}
     for i in range(len(utilities)):
-        P_dict['P{}'.format(i+1)] = (np.exp(utilities[i]) / denominator)
+        P_dict['P{}'.format(i+1)] = (np.exp(utilities[i](parameters, data_array)) / denominator)
     return P_dict
 P_dict = calculate_probabilities(beta_coefficients, data, utilities)
 
+#P_dict is saved as dictionary with arrays
 with open('P_dict.txt', 'w') as file:
     file.write(str(P_dict))
 
 
-# I'm avoiding for-loops to make it fast. Hence P_dict is outputted as is.
+# Below code saves P_dict as list, instead of np.arrays. numpy-arrays are fast.
 
 # with open('P_dict.txt', 'w') as file:
 #     for key in P_dict.keys():
