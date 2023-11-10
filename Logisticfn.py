@@ -37,6 +37,8 @@ def V3(beta_coefficients, data):
     sero = np.array(data["Sero"])
     return beta_coefficients["β03"] + beta_coefficients["β1"] * sero + beta_coefficients["β2"] * sero
 
+#Creating utilities function list.
+
 utilities = [V1(beta_coefficients, data), V2(beta_coefficients, data), V3(beta_coefficients, data)]
 
 def calculate_probabilities(parameters, data, utilities):
